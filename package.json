@@ -1,0 +1,20 @@
+{
+  "name": "@zoibana/freadyuploader",
+  "version": "1.0.1",
+  "description": "Best amazing HTML5 file uploader plugin",
+  "main": "index.js",
+  "scripts": {},
+  "keywords": [
+    "file",
+    "upload",
+    "image",
+    "drag-n-drop",
+    "image upload",
+    "file upload",
+    "upload file",
+    "files",
+  ],
+  "author": "zoibana@gmail.com",
+  "license": "ISC",
+  "repository": "git@github.com:zoibana/freadyuploader.git"
+}
