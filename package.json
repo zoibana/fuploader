@@ -1,6 +1,6 @@
 {
   "name": "@zoibana/fuploader",
-  "version": "0.0.6",
+  "version": "0.0.7",
   "description": "Best amazing HTML5 async file uploader plugin",
   "main": "dist/js/Fuploader.js",
   "scripts": {
@@ -30,5 +30,8 @@
   },
   "author": "zoibana@gmail.com",
   "license": "ISC",
-  "repository": "git@github.com:zoibana/fuploader.git"
+  "repository": "git@github.com:zoibana/fuploader.git",
+  "dependencies": {
+    "sortablejs": "^1.14.0"
+  }
 }

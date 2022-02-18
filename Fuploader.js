@@ -2,6 +2,7 @@ import Button from "./source/js/Button";
 import Progressbar from "./source/js/Progressbar";
 import Status from "./source/js/Status";
 import Icon from "./source/js/Icon";
+import Sortable from 'sortablejs';
 
 export default class Fuploader {
 
@@ -14,10 +15,12 @@ export default class Fuploader {
             'error': 'Error',
             'allFilesUploaded': 'Files are uploaded',
             'dragFilesHere': 'Drag files here',
+            'chooseFileFromComputer': 'Choose file from computer',
             'orChooseFileFromComputer': 'Or choose file from computer',
             'dropFilesHere': 'Drop files here',
             'totalSize': 'Total size',
             'selectedFiles': 'Selected',
+            'maxFilesLimitReached': 'Max files limit reached',
         },
         'ru': {
             'upload': 'Загрузить',
@@ -27,10 +30,12 @@ export default class Fuploader {
             'error': 'Ошибка',
             'allFilesUploaded': 'Файлы загружены',
             'dragFilesHere': 'Перетащите файл сюда',
+            'chooseFileFromComputer': 'Выберите на компьютере',
             'orChooseFileFromComputer': 'Или выберите на компьютере',
             'dropFilesHere': 'Бросьте файл в эту область',
             'totalSize': 'Общий вес',
             'selectedFiles': 'Выбрано файлов',
+            'maxFilesLimitReached': 'Уже выбрано максимально разрешенное кол-во файлов',
         },
     }
 
@@ -45,19 +50,23 @@ export default class Fuploader {
             name: 'file',
             width: '100%',
             height: '400px',
+            paste: true,
+            dragDrop: true,
+            maxFiles: 0,
+            sortable: false,
             formData: {},
             classes: {
                 container: 'fuploader',
                 dropzone: 'fuploader-dropzone',
                 dropzoneLabel: 'fuploader-dropzone-label',
                 dropzoneArea: 'fuploader-dropzone-area',
-                dragOver: 'dragover',
                 filelist: 'fuploader-filelist',
                 filelistItems: 'fuploader-filelist-files',
                 filelistData: 'fuploader-filelist-file-data',
                 filelistDataTitle: 'fuploader-filelist-file-data-title',
                 filelistDataSize: 'fuploader-filelist-file-data-size',
                 filelistActions: 'fuploader-filelist-file-actions',
+                filelistNotice: 'fuploader-filelist-notice',
                 footer: 'fuploader-footer',
                 footerData: 'fuploader-footer-data',
                 footerButtons: 'fuploader-footer-buttons',
@@ -79,6 +88,7 @@ export default class Fuploader {
         this.renderDefaultLayout();
 
         this.dropzone = this.el.querySelector('.' + this.options.classes.dropzone);
+        this.dropzoneArea = this.el.querySelector('.' + this.options.classes.dropzoneArea);
         this.filelist = this.el.querySelector('.' + this.options.classes.filelist);
         this.filelistItems = this.filelist.querySelector('.' + this.options.classes.filelistItems);
         this.footer = this.el.querySelector('.' + this.options.classes.footer);
@@ -101,32 +111,41 @@ export default class Fuploader {
         this.uploadIndex = 0;
         this.isUploading = false;
         this.isDone = false;
+        this.dragDropDisabled = false;
 
         this.xhr = null;
+        this.sortable = null;
 
         this.initEvents();
     }
 
     initEvents() {
-        this.el.addEventListener("paste", (event) => {
-            event.preventDefault();
-            let items = (event.clipboardData || event.originalEvent.clipboardData).items;
-            for (let index in items) {
-                let item = items[index];
-                if (item.kind === 'file') {
-                    let blob = item.getAsFile();
-                    if(blob){
-                        this.handleFiles([blob]);
+
+        if (this.options.paste) {
+            this.el.addEventListener("paste", (event) => {
+                event.preventDefault();
+                let items = (event.clipboardData || event.originalEvent.clipboardData).items;
+                for (let index in items) {
+                    let item = items[index];
+                    if (item.kind === 'file') {
+                        let blob = item.getAsFile();
+                        if (blob) {
+                            this.handleFiles([blob]);
+                        }
                     }
                 }
-            }
-            return false;
-        });
-        this.el.addEventListener("dragenter", this.dragOver.bind(this), false);
-        this.el.addEventListener("dragover", this.dragOver.bind(this), false);
-        this.el.addEventListener("dragexit", this.dragLeave.bind(this), false);
-        this.el.addEventListener("dragleave", this.dragLeave.bind(this), false);
-        this.el.addEventListener("drop", this.dropped.bind(this), false);
+                return false;
+            });
+        }
+
+        if (this.options.dragDrop) {
+            this.el.addEventListener("dragenter", this.dragOver.bind(this), false);
+            this.el.addEventListener("dragover", this.dragOver.bind(this), false);
+            this.el.addEventListener("dragexit", this.dragLeave.bind(this), false);
+            this.el.addEventListener("dragleave", this.dragLeave.bind(this), false);
+            this.el.addEventListener("drop", this.dropped.bind(this), false);
+        }
+
         this.input.addEventListener('change', this.processInputFiles.bind(this));
 
         this.addButton.addEventListener('click', (e) => {
@@ -164,7 +183,6 @@ export default class Fuploader {
                 return false;
             }
         });
-
     }
 
     renderDefaultLayout() {
@@ -175,29 +193,35 @@ export default class Fuploader {
     }
 
     dragOver(event) {
-        event.stopPropagation();
-        event.preventDefault();
+        if (!this.dragDropDisabled) {
+            event.stopPropagation();
+            event.preventDefault();
 
-        if (this.isUploading) {
-            event.dataTransfer.dropEffect = 'none';
-        } else {
-            this.el.classList.add(this.options.classes.dragOver);
-            event.dataTransfer.dropEffect = 'copy';
+            if (this.isUploading) {
+                event.dataTransfer.dropEffect = 'none';
+            } else {
+                this.dropzoneArea.classList.remove('hidden');
+                event.dataTransfer.dropEffect = 'copy';
+            }
         }
     }
 
     dragLeave() {
-        this.el.classList.remove(this.options.classes.dragOver);
+        if (!this.dragDropDisabled) {
+            this.dropzoneArea.classList.add('hidden');
+        }
     }
 
     dropped(event) {
-        event.stopPropagation();
-        event.preventDefault();
+        if (!this.dragDropDisabled) {
+            event.stopPropagation();
+            event.preventDefault();
 
-        this.dragLeave();
+            this.dragLeave();
 
-        if (!this.isUploading) {
-            this.handleFiles(event.dataTransfer.files);
+            if (!this.isUploading) {
+                this.handleFiles(event.dataTransfer.files);
+            }
         }
     }
 
@@ -207,15 +231,32 @@ export default class Fuploader {
 
     handleFiles(files) {
 
+        let BreakException = {};
+
         if (this.isDone) {
             this.cancel();
         }
 
-        ([...files]).forEach((file) => {
-            this.files.push(file);
-        });
+        if (this.isMaxFilesLimitReached()) {
+            return;
+        }
+
+        try {
+            ([...files]).forEach((file) => {
+                this.files.push(file);
+                if (this.isMaxFilesLimitReached()) {
+                    throw BreakException;
+                }
+            });
+        } catch (e) {
+
+        }
 
         this.renderFiles();
+    }
+
+    isMaxFilesLimitReached() {
+        return this.options.maxFiles && this.files.length >= this.options.maxFiles;
     }
 
     showFilelist() {
@@ -244,20 +285,63 @@ export default class Fuploader {
             }
         });
 
+        if (this.isMaxFilesLimitReached()) {
+            tpl.push(`<div class="${this.options.classes.filelistNotice}">${this.locale.maxFilesLimitReached}</div>`);
+        }
+
         if (this.files.length) {
             this.showFilelist();
-
             this.filelistItems.innerHTML = tpl.join('');
             this.footerStat.innerHTML = this.tplStat();
+
+            if (this.isMaxFilesLimitReached()) {
+                this.dragDropDisabled = true;
+                this.addButton.classList.add('hidden');
+            } else {
+                this.dragDropDisabled = false;
+                this.addButton.classList.remove('hidden');
+            }
+
+            if (this.options.sortable) {
+                if (this.sortable) {
+                    this.sortable.destroy();
+                }
+
+                this.sortable = Sortable.create(this.filelistItems, {
+                    onStart: () => {
+                        this.dragDropDisabled = true;
+                    },
+                    onEnd: () => {
+                        this.dragDropDisabled = false;
+                        this.updateFileListOrder();
+                    }
+                });
+            }
+
         } else {
             this.hideFileList();
         }
+    }
+
+    updateFileListOrder() {
+        let filesList = [];
+        let newOrderedFiles = this.filelistItems.querySelectorAll('.' + this.options.classes.file);
+        newOrderedFiles.forEach((file) => {
+            let index = file.dataset.index;
+            filesList.push(this.files[index]);
+        });
+        this.files = filesList;
+        this.renderFiles();
     }
 
     uploadFiles() {
         this.addButton.classList.add('hidden');
         this.reloadButton.classList.add('hidden');
         this.uploadButton.classList.add('hidden');
+        this.dragDropDisabled = true;
+        if (this.sortable) {
+            this.sortable.destroy();
+        }
 
         if (this.files.length) {
             let file = this.files[this.uploadIndex];
@@ -339,6 +423,7 @@ export default class Fuploader {
         this.isUploading = false;
         this.isDone = false;
         this.uploadIndex = 0;
+        this.dragDropDisabled = false;
 
         if (this.xhr) {
             this.xhr.abort();
@@ -357,8 +442,12 @@ export default class Fuploader {
             <label class="${this.options.classes.dropzone}">
                 <div>
                     <input type="file" multiple>
-                    <div class="${this.options.classes.dropzoneLabel}">${this.locale.dragFilesHere}</div>
-                    ${Button.primary(this.locale.orChooseFileFromComputer, 'span').outerHTML}
+                    ${this.options.dragDrop ? '<div class="' + this.options.classes.dropzoneLabel + '">' + this.locale.dragFilesHere + '</div>' : ''}
+                        ${Button.primary(
+            this.options.dragDrop ?
+                this.locale.orChooseFileFromComputer :
+                this.locale.chooseFileFromComputer
+            , 'span').outerHTML}
                 </div>
             </label>
             <div class="${this.options.classes.dropzoneArea} hidden">
@@ -367,9 +456,9 @@ export default class Fuploader {
         `;
     }
 
-    fileTpl(file) {
+    fileTpl(file, index) {
         return `
-            <div class="${this.options.classes.file}">
+            <div class="${this.options.classes.file}" data-index="${index}">
                 <div class="${this.options.classes.fileIcon} ${file.type.match('image.*') ? this.options.classes.fileIconImage : ''}">
                     ${Icon.file()}
                 </div>
@@ -402,7 +491,9 @@ export default class Fuploader {
 
     tplStat() {
         return `
-            <div>${this.locale.selectedFiles}: ${this.files.length}</div>
+            <div>
+                ${this.locale.selectedFiles}: ${this.files.length}${this.options.maxFiles > 0 ? '/' + this.options.maxFiles : ''}
+            </div>
             <div>${this.locale.totalSize}: ${this.fileSize(this.totalSize())}</div>
         `;
     }

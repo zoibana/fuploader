@@ -1,15 +1,11 @@
 import Fuploader from "../Fuploader";
 
 new Fuploader(document.querySelector('#uploader'), {
-    // formData: {
-    //     _csrf: 'testCsrf',
-    //     testAttr: 'testValue',
-    //     testForm: {
-    //         values: [1,2],
-    //         test: ';'
-    //     }
-    // },
-    formData: function(){
+    maxFiles: 5,
+    sortable: false,
+    dragDrop: true,
+    paste: false,
+    formData: function () {
         return {
             test: 1,
             testForm: {
