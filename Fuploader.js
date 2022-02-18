@@ -45,6 +45,7 @@ export default class Fuploader {
             name: 'file',
             width: '100%',
             height: '400px',
+            formData: {},
             classes: {
                 container: 'fuploader',
                 dropzone: 'fuploader-dropzone',
@@ -260,8 +261,12 @@ export default class Fuploader {
         removeButton.classList.add('hidden');
         progressBar.classList.remove('hidden');
 
-        let formData = new FormData()
+        let formData = new FormData();
         formData.append(this.options.name, file);
+
+        Object.entries(this.options.formData).forEach((attr) => {
+            formData.append(attr[0], attr[1]);
+        });
 
         let totalProgress = (this.uploadIndex / this.files.length) * 100;
         this.footerStat.innerHTML = Progressbar.render(totalProgress);

@@ -300,6 +300,7 @@ var Fuploader = /*#__PURE__*/function () {
       name: 'file',
       width: '100%',
       height: '400px',
+      formData: {},
       classes: {
         container: 'fuploader',
         dropzone: 'fuploader-dropzone',
@@ -531,6 +532,9 @@ var Fuploader = /*#__PURE__*/function () {
       progressBar.classList.remove('hidden');
       var formData = new FormData();
       formData.append(this.options.name, file);
+      Object.entries(this.options.formData).forEach(function (attr) {
+        formData.append(attr[0], attr[1]);
+      });
       var totalProgress = this.uploadIndex / this.files.length * 100;
       this.footerStat.innerHTML = _source_js_Progressbar__WEBPACK_IMPORTED_MODULE_1__["default"].render(totalProgress);
       this.xhr = new XMLHttpRequest();
