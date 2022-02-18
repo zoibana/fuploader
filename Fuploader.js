@@ -108,6 +108,20 @@ export default class Fuploader {
     }
 
     initEvents() {
+        this.el.addEventListener("paste", (event) => {
+            event.preventDefault();
+            let items = (event.clipboardData || event.originalEvent.clipboardData).items;
+            for (let index in items) {
+                let item = items[index];
+                if (item.kind === 'file') {
+                    let blob = item.getAsFile();
+                    if(blob){
+                        this.handleFiles([blob]);
+                    }
+                }
+            }
+            return false;
+        });
         this.el.addEventListener("dragenter", this.dragOver.bind(this), false);
         this.el.addEventListener("dragover", this.dragOver.bind(this), false);
         this.el.addEventListener("dragexit", this.dragLeave.bind(this), false);
