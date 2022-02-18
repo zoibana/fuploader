@@ -263,10 +263,7 @@ export default class Fuploader {
 
         let formData = new FormData();
         formData.append(this.options.name, file);
-
-        Object.entries(this.options.formData).forEach((attr) => {
-            formData.append(attr[0], attr[1]);
-        });
+        formData = this.buildFormData(formData, this.options.formData);
 
         let totalProgress = (this.uploadIndex / this.files.length) * 100;
         this.footerStat.innerHTML = Progressbar.render(totalProgress);
@@ -296,6 +293,19 @@ export default class Fuploader {
         });
         this.xhr.open("POST", this.options.upload_url, true);
         this.xhr.send(formData);
+    }
+
+    buildFormData(formData, data, parentKey) {
+        if (data && typeof data === 'object' && !(data instanceof Date) && !(data instanceof File)) {
+            Object.keys(data).forEach(key => {
+                this.buildFormData(formData, data[key], parentKey ? `${parentKey}[${key}]` : key);
+            });
+        } else {
+            const value = data == null ? '' : data;
+
+            formData.append(parentKey, value);
+        }
+        return formData;
     }
 
     uploaded() {
