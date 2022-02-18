@@ -1,9 +1,17 @@
 {
-  "name": "@zoibana/freadyuploader",
-  "version": "1.0.1",
-  "description": "Best amazing HTML5 file uploader plugin",
-  "main": "index.js",
-  "scripts": {},
+  "name": "@zoibana/fuploader",
+  "version": "0.0.1",
+  "description": "Best amazing HTML5 async file uploader plugin",
+  "main": "dist/js/Fuploader.js",
+  "scripts": {
+    "dev": "npm run development",
+    "development": "mix",
+    "watch": "mix watch",
+    "watch-poll": "mix watch -- --watch-options-poll=1000",
+    "hot": "mix watch --hot",
+    "prod": "npm run production",
+    "production": "mix --production"
+  },
   "keywords": [
     "file",
     "upload",
@@ -12,9 +20,15 @@
     "image upload",
     "file upload",
     "upload file",
-    "files",
+    "files"
   ],
+  "devDependencies": {
+    "laravel-mix": "^6.0.42",
+    "resolve-url-loader": "^5.0.0",
+    "sass": "^1.49.8",
+    "sass-loader": "^12.6.0"
+  },
   "author": "zoibana@gmail.com",
   "license": "ISC",
-  "repository": "git@github.com:zoibana/freadyuploader.git"
+  "repository": "git@github.com:zoibana/fuploader.git"
 }
