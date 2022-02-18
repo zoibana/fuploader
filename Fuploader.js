@@ -1,7 +1,7 @@
-import Button from "./Button";
-import Progressbar from "./Progressbar";
-import Status from "./Status";
-import Icon from "./Icon";
+import Button from "./source/js/Button";
+import Progressbar from "./source/js/Progressbar";
+import Status from "./source/js/Status";
+import Icon from "./source/js/Icon";
 
 export default class Fuploader {
 
