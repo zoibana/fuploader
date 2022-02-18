@@ -296,6 +296,10 @@ export default class Fuploader {
     }
 
     buildFormData(formData, data, parentKey) {
+        if (typeof data === 'function') {
+            data = data();
+        }
+
         if (data && typeof data === 'object' && !(data instanceof Date) && !(data instanceof File)) {
             Object.keys(data).forEach(key => {
                 this.buildFormData(formData, data[key], parentKey ? `${parentKey}[${key}]` : key);
