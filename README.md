@@ -52,6 +52,11 @@ new Fuploader(element, {
 });
 ```
 
+SCSS
+```scss
+@import '@zoibana/fuploader/dist/css/fuploader.css';
+```
+
 ## Not using a package manager or bundler?
 
 Use the standalone files like this:
