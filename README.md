@@ -4,8 +4,7 @@ But also you can just drag and drop your files onto the file field! Or JUST COPY
 FUPloader will display the list of selected files with previews. You can sort files to set order you need, delete files or add new files to list. 
 Then just click UPLOAD button and watch to upload progress of each file in list - one by one. Never before file uploading was so easy and handy!
 
-FUPloader is fully customizable and configurable
-It's fully configurable, can be styled according to your needs.
+FUPloader is fully customizable and configurable and can be styled according to your needs.
 
 ![FUPloader screenshot](https://github.com/zoibana/fuploader/blob/master/source/img/init.png?raw=true)
 

@@ -347,6 +347,9 @@ export default class Fuploader {
         this.reloadButton.classList.add('hidden');
         this.uploadButton.classList.add('hidden');
         this.dragDropDisabled = true;
+
+        this.footerStat.innerHTML = Progressbar.render(0);
+
         if (this.sortable) {
             this.sortable.destroy();
         }
