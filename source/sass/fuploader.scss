@@ -140,13 +140,16 @@ $fcolor-warning: #FF9900;
             }
 
             &-data {
-                flex: 0 0 50%;
+                flex: 0 0 30%;
+                max-width: 30%;
                 text-align: left;
 
                 &-title {
+                    max-width: 100%;
                     text-overflow: ellipsis;
                     white-space: nowrap;
                     display: block;
+                    overflow: hidden;
                     font-size: 16px;
                     margin-bottom: 2px;
                     color: black;
@@ -176,7 +179,7 @@ $fcolor-warning: #FF9900;
 
             &-status {
                 padding: 0 12px;
-                max-width: 200px;
+                max-width: 250px;
                 font-size: 0.8rem;
             }
 

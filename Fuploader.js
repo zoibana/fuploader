@@ -23,6 +23,7 @@ export default class Fuploader {
             selectedFiles: 'Selected',
             maxFilesLimitReached: 'Max files limit reached',
             fileTypeIsNotAllowed: 'File type is not allowed',
+            fileIsTooBig: 'File is too big. Max filesize: {{maxFilesize}}',
         },
         'ru': {
             upload: 'Загрузить',
@@ -39,6 +40,7 @@ export default class Fuploader {
             selectedFiles: 'Выбрано файлов',
             maxFilesLimitReached: 'Уже выбрано максимально разрешенное кол-во файлов',
             fileTypeIsNotAllowed: 'Формат файла не разрешен',
+            fileIsTooBig: 'Файл слишком тяжелый. Макс вес: {{maxFilesize}}',
         },
     }
 
@@ -64,10 +66,16 @@ export default class Fuploader {
             paste: true,
             dragDrop: true,
             maxFiles: 0,
+            maxFileSize: 0, // in Megabytes
             sortable: false,
             parallel: false,
             acceptedFileTypes: '*',
             formData: {},
+            headers: {
+                Accept: "application/json",
+                "Cache-Control": "no-cache",
+                "X-Requested-With": "XMLHttpRequest",
+            },
             classes: {
                 container: 'fuploader',
                 dropzone: 'fuploader-dropzone',
@@ -137,7 +145,13 @@ export default class Fuploader {
     initEvents() {
 
         if (this.options.paste) {
-            this.el.addEventListener("paste", this.onPaste.bind(this), false);
+            let pasteHandler = this.onPaste.bind(this);
+            this.el.addEventListener('mouseenter', (e) => {
+                this.el.addEventListener("paste", pasteHandler);
+            });
+            this.el.addEventListener('mouseleave', (e) => {
+                this.el.removeEventListener("paste", pasteHandler);
+            });
         }
 
         if (this.options.dragDrop) {
@@ -196,6 +210,7 @@ export default class Fuploader {
 
     onPaste(event) {
         event.preventDefault();
+        event.stopPropagation();
         let items = (event.clipboardData || event.originalEvent.clipboardData).items;
         for (let index in items) {
             let item = items[index];
@@ -203,6 +218,7 @@ export default class Fuploader {
                 let blob = item.getAsFile();
                 if (blob) {
                     this.handleFiles([blob]);
+                    return;
                 }
             }
         }
@@ -224,9 +240,7 @@ export default class Fuploader {
     }
 
     onDragLeave() {
-        if (!this.dragDropDisabled) {
-            this.dropzoneArea.classList.add('hidden');
-        }
+        this.dropzoneArea.classList.add('hidden');
     }
 
     onDropped(event) {
@@ -430,7 +444,7 @@ export default class Fuploader {
 
         progressBar.classList.remove('hidden');
 
-        if (!file.isValid) {
+        if (!file.isValid()) {
             loaded();
             return;
         }
@@ -442,7 +456,10 @@ export default class Fuploader {
         formData = this.buildFormData(formData, this.options.formData);
 
         let xhr = new XMLHttpRequest();
-        xhr.upload.onprogress = event => {
+
+        // Some browsers do not have the .upload property
+        let progressProperty = xhr.upload != null ? xhr.upload : xhr;
+        progressProperty.onprogress = event => {
             let percent_completed = Math.ceil(event.loaded / event.total * 100);
             progressBar.innerHTML = Progressbar.render(percent_completed);
         };
@@ -460,6 +477,15 @@ export default class Fuploader {
             loaded();
         };
         xhr.open("POST", this.options.upload_url, true);
+
+        let headers = this.options.headers;
+        for (let headerName in headers) {
+            let headerValue = headers[headerName];
+            if (headerValue) {
+                xhr.setRequestHeader(headerName, headerValue);
+            }
+        }
+
         xhr.send(formData);
     }
 

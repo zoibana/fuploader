@@ -10,9 +10,8 @@ export default class FileItem {
 
     chunkStart = 0;
 
-    constructor(file, fileTypes) {
+    constructor(file) {
         this.file = file;
-        this.fileTypes = fileTypes;
     }
 
     isImage() {
@@ -52,15 +51,24 @@ export default class FileItem {
         return this.file.slice(this.chunkStart, this.chunkEnd);
     }
 
-    get isValid() {
+    isValid() {
+        return this.isValidFileSize() && this.isValidFileType();
+    }
 
-        if (!this.fileTypes || this.fileTypes === '*') {
+    isValidFileSize() {
+        let maxFileSize = FileItem.options.maxFileSize;
+        return !maxFileSize || this.size < (maxFileSize * 1024 * 1024);
+    }
+
+    isValidFileType() {
+        let fileTypes = FileItem.options.acceptedFileTypes;
+
+        if (!fileTypes || fileTypes === '*') {
             return true;
         }
 
-        if (Array.isArray(this.fileTypes)) {
-            for (let index in this.fileTypes) {
-                let fileType = this.fileTypes[index];
+        if (Array.isArray(fileTypes)) {
+            for (let fileType of fileTypes) {
                 if (fileType === '*' || this.type.match(fileType)) {
                     return true;
                 }
@@ -68,7 +76,7 @@ export default class FileItem {
             return false;
         }
 
-        return this.type.match(this.fileTypes);
+        return this.type.match(fileTypes);
     }
 
     onLoadImage(onLoad) {
@@ -90,6 +98,14 @@ export default class FileItem {
         let classes = FileItem.options.classes;
         let lang = Fuploader.lang[FileItem.options.lang];
 
+        let status = '';
+        if (!this.isValidFileType()) {
+            status = Status.error(lang.fileTypeIsNotAllowed);
+        }
+        if (!this.isValidFileSize()) {
+            status = Status.error(lang.fileIsTooBig.replace("{{maxFilesize}}", FileItem.options.maxFileSize + ' mb'));
+        }
+
         return `
             <div class="${classes.file}" data-index="${index}">
                 <div class="${classes.fileIcon} ${this.isImage() ? classes.fileIconImage : ''}" >
@@ -101,9 +117,7 @@ export default class FileItem {
                 </div>
                 <div class="${classes.filelistActions}">
                     <div class="${classes.fileProgress}"></div>
-                    <div class="${classes.fileStatus}">
-                        ${this.isValid ? '' : Status.error(lang.fileTypeIsNotAllowed)}
-                    </div>
+                    <div class="${classes.fileStatus}">${status}</div>
                     <div class="${classes.fileRemove}">
                         ${Icon.x()}
                     </div>

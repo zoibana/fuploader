@@ -35,17 +35,44 @@ new Fuploader('div#fuploader', {
 new Fuploader(element, {
     upload_url: "/fileupload/", 
     name: "file", // file field name
-    lang: "en", // language. Localization is configurable - easy to add new translations
+    lang: "en", // language
     width: 800, // default: 100%
     height: 500, // default: 500px
     sortable: true, // Allow to sort list of selected files. Default false
     paste: true, // Allow to PASTE image files from clipborad
     dragdrop: true, // Allow to select files via drag and drop
     maxFiles: 20, // Max files limit
-    parallel: true, // Allow parallel files uploading. If false files will upload one by one 
+    maxFileSize: 2, // Max file size in megabytes. If zero — no check. Default: 0
+    parallel: true, // Allow parallel files uploading. If false files will upload one by one
+    acceptedFileTypes: ['*'], // allowed file mime-types. Etc: ["image.*","text.*"]. If value is empty or equals "*" - no checks
     formData: { // Additional formdata to send with each file. Could be a closure that returns object
       _csrf: "...."
     }
+});
+
+// Let's add new locale
+Fuploader.lang.ru = {
+    upload: 'Загрузить',
+    uploadMore: 'Загрузить еще',
+    cancel: 'Отмена',
+    uploaded: 'Загружен',
+    error: 'Ошибка',
+    allFilesUploaded: 'Файлы загружены',
+    dragFilesHere: 'Перетащите файл сюда',
+    chooseFileFromComputer: 'Выберите на компьютере',
+    orChooseFileFromComputer: 'Или выберите на компьютере',
+    dropFilesHere: 'Бросьте файл в эту область',
+    totalSize: 'Общий вес',
+    selectedFiles: 'Выбрано файлов',
+    maxFilesLimitReached: 'Уже выбрано максимально разрешенное кол-во файлов',
+    fileTypeIsNotAllowed: 'Формат файла не разрешен',
+    fileIsTooBig: 'Файл слишком тяжелый. Макс вес: {{maxFilesize}}',
+};
+
+// And use it
+new Fuploader(element, {
+    upload_url: "/fileupload/",
+    lang: "ru", // language
 });
 ```
 
@@ -71,7 +98,7 @@ Use the standalone files like this:
 
 ## 🔥 Main features
 
-- Lightweight: 55 kb JS + 4 kb CSS 
+- Lightweight: 61 kb JS + 4 kb CSS 
 - Image thumbnail previews
 - Multiple files and one by one or synchronous uploads
 - Progress updates
