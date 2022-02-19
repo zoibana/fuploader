@@ -452,7 +452,7 @@ export default class Fuploader {
         progressBar.innerHTML = Progressbar.render(0);
 
         let formData = new FormData();
-        formData.append(this.options.name, file);
+        formData.append(this.options.name, file.file);
         formData = this.buildFormData(formData, this.options.formData);
 
         let xhr = new XMLHttpRequest();

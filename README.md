@@ -86,7 +86,7 @@ SCSS
 Use the standalone files like this:
 
 ```html
-<script src="https://unpkg.com/@zoibana/fuploader@0.0.7/dist/js/Fuploader.js"></script>
+<script src="https://unpkg.com/@zoibana/fuploader@0.0.13/dist/js/Fuploader.js"></script>
 <link rel="stylesheet" href="https://unpkg.com/@zoibana/fuploader@0.0.7/dist/css/fuploader.css" type="text/css"/>
 
 <div id="fuploader"></div>
