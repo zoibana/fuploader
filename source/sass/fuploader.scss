@@ -132,7 +132,7 @@ $fcolor-warning: #FF9900;
                     height: 16px;
                 }
 
-                &.fready-file-image {
+                &.fuploader-file-image {
                     svg {
                         display: none
                     }
@@ -167,7 +167,7 @@ $fcolor-warning: #FF9900;
             }
 
             &-progress {
-                display: none;
+                display: block;
                 width: 100px;
             }
 
@@ -272,20 +272,33 @@ $fcolor-warning: #FF9900;
         }
     }
 
-    &-progress-bar {
-        display: block;
-        width: 100%;
-        height: 10px;
-        background-color: $fcolor-gray-light;
-        border-radius: 5px;
-        overflow: hidden;
+    &-progress {
+        display: flex;
+        align-items: center;
 
-        div {
-            width: 0;
-            transition: width 0.3s ease-in-out;
+        &-percent {
+            font-size: 0.8rem;
+            color: $fcolor-gray;
+            flex: 0 0 20px;
+            text-align: right;
+            margin-left: 4px;
+        }
+
+        &-bar {
+            display: block;
+            width: 100%;
             height: 10px;
-            background-color: $fcolor-primary;
+            background-color: $fcolor-gray-light;
             border-radius: 5px;
+            overflow: hidden;
+
+            div {
+                width: 0;
+                transition: width 0.3s ease-in-out;
+                height: 10px;
+                background-color: $fcolor-primary;
+                border-radius: 5px;
+            }
         }
     }
 

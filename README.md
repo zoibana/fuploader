@@ -43,6 +43,7 @@ new Fuploader(element, {
     paste: true, // Allow to PASTE image files from clipborad
     dragdrop: true, // Allow to select files via drag and drop
     maxFiles: 20, // Max files limit
+    parallel: true, // Allow parallel files uploading. If false files will upload one by one 
     formData: { // Additional formdata to send with each file. Could be a closure that returns object
       _csrf: "...."
     }

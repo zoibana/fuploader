@@ -62,6 +62,7 @@ export default class Fuploader {
             dragDrop: true,
             maxFiles: 0,
             sortable: false,
+            parallel: false,
             formData: {},
             classes: {
                 container: 'fuploader',
@@ -120,9 +121,8 @@ export default class Fuploader {
         this.isUploading = false;
         this.isDone = false;
         this.dragDropDisabled = false;
-
-        this.xhr = null;
         this.sortable = null;
+        this.uploadedFiles = 0;
 
         this.initEvents();
     }
@@ -352,35 +352,53 @@ export default class Fuploader {
         }
 
         if (this.files.length) {
-            let file = this.files[this.uploadIndex];
-            this.uploadFile(file, this.uploadIndex);
+
+            // Parallel uploading
+            if (this.options.parallel) {
+                this.files.forEach((file, index) => {
+                    this.uploadFile(file, index);
+                })
+            }
+            // One by one uploading
+            else {
+                let onLoaded = function () {
+                    let file = this.files[this.uploadedFiles];
+                    this.uploadFile(file, this.uploadedFiles, onLoaded);
+                };
+
+                let file = this.files[this.uploadIndex];
+                this.uploadFile(file, this.uploadIndex, onLoaded);
+            }
         }
     }
 
-    uploadFile(file, index) {
+    uploadFile(file, index, onLoaded = null) {
 
         let fileElement = this.filelistItems.querySelectorAll('.' + this.options.classes.file)[index];
+
+        if(!fileElement){
+            return;
+        }
+
         let progressBar = fileElement.querySelector('.' + this.options.classes.fileProgress);
         let removeButton = fileElement.querySelector('.' + this.options.classes.fileRemove);
         let statusContainer = fileElement.querySelector('.' + this.options.classes.fileStatus);
 
         removeButton.classList.add('hidden');
         progressBar.classList.remove('hidden');
+        progressBar.innerHTML = Progressbar.render(0);
 
         let formData = new FormData();
         formData.append(this.options.name, file);
         formData = this.buildFormData(formData, this.options.formData);
 
-        let totalProgress = (this.uploadIndex / this.files.length) * 100;
-        this.footerStat.innerHTML = Progressbar.render(totalProgress);
-
-        this.xhr = new XMLHttpRequest();
-        this.xhr.onprogress = event => {
+        let xhr = new XMLHttpRequest();
+        xhr.onprogress = event => {
             let percent_completed = (event.loaded / event.total) * 100;
             progressBar.innerHTML = Progressbar.render(percent_completed);
         };
-        this.xhr.addEventListener('load', () => {
-            let status = parseInt(this.xhr.status);
+        xhr.addEventListener('load', (response) => {
+            let status = parseInt(xhr.status);
             progressBar.classList.add('hidden');
             if (status === 200) {
                 statusContainer.innerHTML = Status.success(this.locale.uploaded);
@@ -388,17 +406,22 @@ export default class Fuploader {
                 statusContainer.innerHTML = Status.error(this.locale.error);
             }
 
-            this.uploadIndex++;
-            if (this.uploadIndex + 1 > this.files.length) {
-                this.uploaded();
-                return;
+            this.uploadedFiles++;
+
+            let totalProgress = (this.uploadedFiles / this.files.length) * 100;
+            this.footerStat.innerHTML = Progressbar.render(totalProgress);
+
+            if (onLoaded) {
+                onLoaded.call(this);
             }
 
-            let file = this.files[this.uploadIndex];
-            this.uploadFile(file, this.uploadIndex);
+            if (this.uploadedFiles === this.files.length) {
+                this.uploaded();
+            }
+
         });
-        this.xhr.open("POST", this.options.upload_url, true);
-        this.xhr.send(formData);
+        xhr.open("POST", this.options.upload_url, true);
+        xhr.send(formData);
     }
 
     buildFormData(formData, data, parentKey) {
@@ -432,10 +455,6 @@ export default class Fuploader {
         this.isDone = false;
         this.uploadIndex = 0;
         this.dragDropDisabled = false;
-
-        if (this.xhr) {
-            this.xhr.abort();
-        }
 
         this.reloadButton.classList.add('hidden');
         this.addButton.classList.remove('hidden');
