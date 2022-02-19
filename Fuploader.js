@@ -41,6 +41,14 @@ export default class Fuploader {
 
     constructor(element, params = {}) {
 
+        if (typeof element === 'string') {
+            element = document.querySelector(element);
+        }
+
+        if (!element) {
+            return;
+        }
+
         this.el = element;
 
         let defaults = {

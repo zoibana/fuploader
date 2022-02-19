@@ -1,6 +1,6 @@
 {
   "name": "@zoibana/fuploader",
-  "version": "0.0.7",
+  "version": "0.0.8",
   "description": "Best amazing HTML5 async file uploader plugin",
   "main": "dist/js/Fuploader.js",
   "scripts": {

@@ -29,8 +29,7 @@ Use as **ES6 module** (recommended):
 import Fuploader from "@zoibana/fuploader/Fuploader";
 
 // Base usage
-let element = document.querySelector('div#fuploader');
-new Fuploader(element, {
+new Fuploader('div#fuploader', {
     upload_url: "/fileupload/",
     name: "file"
 });
@@ -68,7 +67,7 @@ Use the standalone files like this:
 <div id="fuploader"></div>
 
 <script>
-  new Fuploader(document.getElementById('fuploader'), { upload_url: "/fileupload/" });
+  new Fuploader('#fuploader', { upload_url: "/fileupload/" });
 </script>
 ```
 
