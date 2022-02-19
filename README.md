@@ -60,11 +60,10 @@ Use the standalone files like this:
 <script src="https://unpkg.com/@zoibana/fuploader@0.0.7/dist/js/Fuploader.js"></script>
 <link rel="stylesheet" href="https://unpkg.com/@zoibana/fuploader@0.0.7/dist/css/fuploader.css" type="text/css"/>
 
-<div class="fuploader"></div>
+<div id="fuploader"></div>
 
 <script>
-  // Dropzone has been added as a global variable.
-  const dropzone = new Dropzone(document.getElementById('fuploader'), { upload_url: "/fileupload/" });
+  new Fuploader(document.getElementById('fuploader'), { upload_url: "/fileupload/" });
 </script>
 ```
 

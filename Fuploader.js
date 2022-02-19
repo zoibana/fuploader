@@ -528,3 +528,5 @@ export default class Fuploader {
     }
 
 }
+
+window.Fuploader = Fuploader;
