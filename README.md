@@ -1,5 +1,3 @@
-<img alt="Dropzone.js" src="https://raw.githubusercontent.com/dropzone/dropzone/assets/github-logo.svg" />
-
 FUPloader is a JavaScript library that get rid of typical problems of the standard file upload fields and forms.
 Yeah, you can use it as regular file field — click in it and choose files from computer.
 But also you can just drag and drop your files onto the file field! Or JUST COPY IMAGE AND PASTE IT to the file field! 
