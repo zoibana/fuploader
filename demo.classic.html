@@ -20,7 +20,12 @@
 <div id="fuploader"></div>
 
 <script>
-    new Fuploader('#fuploader', { upload_url: "/upload.php", parallel: true, sortable: true });
+    new Fuploader('#fuploader', {
+        upload_url: "/upload.php",
+        parallel: false,
+        sortable: true,
+        acceptedFileTypes: ['*']
+    });
 </script>
 </body>
 </html>

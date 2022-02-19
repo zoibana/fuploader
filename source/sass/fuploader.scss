@@ -168,17 +168,23 @@ $fcolor-warning: #FF9900;
 
             &-progress {
                 display: block;
-                width: 100px;
+
+                .fready-progress {
+                    width: 100px;
+                }
             }
 
             &-status {
-
+                padding: 0 12px;
+                max-width: 200px;
+                font-size: 0.8rem;
             }
 
             &-remove {
-                flex: 0 0 24px;
-                height: 24px;
-                width: 24px;
+                flex: 0 0 32px;
+                height: 32px;
+                width: 32px;
+                border-radius: 100%;
                 cursor: pointer;
                 display: inline-flex;
                 align-items: center;
@@ -187,12 +193,13 @@ $fcolor-warning: #FF9900;
                 svg {
                     width: 16px;
                     height: 16px;
-                    color: $fcolor-gray-light;
+                    color: black;
                 }
 
                 &:hover {
+                    background-color: $fcolor-danger;
                     svg {
-                        color: $fcolor-danger;
+                        color: white;
                     }
                 }
             }
@@ -279,7 +286,7 @@ $fcolor-warning: #FF9900;
         &-percent {
             font-size: 0.8rem;
             color: $fcolor-gray;
-            flex: 0 0 20px;
+            flex: 0 0 40px;
             text-align: right;
             margin-left: 4px;
         }

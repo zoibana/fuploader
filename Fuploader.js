@@ -1,41 +1,44 @@
 import Button from "./source/js/Button";
 import Progressbar from "./source/js/Progressbar";
 import Status from "./source/js/Status";
-import Icon from "./source/js/Icon";
-import Sortable from 'sortablejs';
+import FileItem from "./source/js/FileItem";
+import HumanSize from "./source/js/HumanSize";
+import Sortable from "sortablejs";
 
 export default class Fuploader {
 
     static lang = {
         'en': {
-            'upload': 'Upload',
-            'uploadMore': 'Upload more',
-            'cancel': 'Cancel',
-            'uploaded': 'Uploaded',
-            'error': 'Error',
-            'allFilesUploaded': 'Files are uploaded',
-            'dragFilesHere': 'Drag files here',
-            'chooseFileFromComputer': 'Choose file from computer',
-            'orChooseFileFromComputer': 'Or choose file from computer',
-            'dropFilesHere': 'Drop files here',
-            'totalSize': 'Total size',
-            'selectedFiles': 'Selected',
-            'maxFilesLimitReached': 'Max files limit reached',
+            upload: 'Upload',
+            uploadMore: 'Upload more',
+            cancel: 'Cancel',
+            uploaded: 'Uploaded',
+            error: 'Error',
+            allFilesUploaded: 'Files are uploaded',
+            dragFilesHere: 'Drag files here',
+            chooseFileFromComputer: 'Choose file from computer',
+            orChooseFileFromComputer: 'Or choose file from computer',
+            dropFilesHere: 'Drop files here',
+            totalSize: 'Total size',
+            selectedFiles: 'Selected',
+            maxFilesLimitReached: 'Max files limit reached',
+            fileTypeIsNotAllowed: 'File type is not allowed',
         },
         'ru': {
-            'upload': 'Загрузить',
-            'uploadMore': 'Загрузить еще',
-            'cancel': 'Отмена',
-            'uploaded': 'Загружен',
-            'error': 'Ошибка',
-            'allFilesUploaded': 'Файлы загружены',
-            'dragFilesHere': 'Перетащите файл сюда',
-            'chooseFileFromComputer': 'Выберите на компьютере',
-            'orChooseFileFromComputer': 'Или выберите на компьютере',
-            'dropFilesHere': 'Бросьте файл в эту область',
-            'totalSize': 'Общий вес',
-            'selectedFiles': 'Выбрано файлов',
-            'maxFilesLimitReached': 'Уже выбрано максимально разрешенное кол-во файлов',
+            upload: 'Загрузить',
+            uploadMore: 'Загрузить еще',
+            cancel: 'Отмена',
+            uploaded: 'Загружен',
+            error: 'Ошибка',
+            allFilesUploaded: 'Файлы загружены',
+            dragFilesHere: 'Перетащите файл сюда',
+            chooseFileFromComputer: 'Выберите на компьютере',
+            orChooseFileFromComputer: 'Или выберите на компьютере',
+            dropFilesHere: 'Бросьте файл в эту область',
+            totalSize: 'Общий вес',
+            selectedFiles: 'Выбрано файлов',
+            maxFilesLimitReached: 'Уже выбрано максимально разрешенное кол-во файлов',
+            fileTypeIsNotAllowed: 'Формат файла не разрешен',
         },
     }
 
@@ -63,6 +66,7 @@ export default class Fuploader {
             maxFiles: 0,
             sortable: false,
             parallel: false,
+            acceptedFileTypes: '*',
             formData: {},
             classes: {
                 container: 'fuploader',
@@ -87,8 +91,11 @@ export default class Fuploader {
                 fileStatus: 'fuploader-filelist-file-status',
             }
         };
+
         this.options = Object.assign(defaults, params);
         this.locale = Fuploader.lang[this.options.lang] || Fuploader.lang.en;
+
+        FileItem.options = this.options;
 
         this.el.classList.add(this.options.classes.container);
         this.el.style.width = Number.isInteger(this.options.width) ? this.options.width + 'px' : this.options.width;
@@ -117,12 +124,12 @@ export default class Fuploader {
         this.footerButtons.append(this.reloadButton);
 
         this.files = [];
-        this.uploadIndex = 0;
         this.isUploading = false;
         this.isDone = false;
         this.dragDropDisabled = false;
         this.sortable = null;
         this.uploadedFiles = 0;
+        this.totalProgressBar = null;
 
         this.initEvents();
     }
@@ -130,28 +137,15 @@ export default class Fuploader {
     initEvents() {
 
         if (this.options.paste) {
-            this.el.addEventListener("paste", (event) => {
-                event.preventDefault();
-                let items = (event.clipboardData || event.originalEvent.clipboardData).items;
-                for (let index in items) {
-                    let item = items[index];
-                    if (item.kind === 'file') {
-                        let blob = item.getAsFile();
-                        if (blob) {
-                            this.handleFiles([blob]);
-                        }
-                    }
-                }
-                return false;
-            });
+            this.el.addEventListener("paste", this.onPaste.bind(this), false);
         }
 
         if (this.options.dragDrop) {
-            this.el.addEventListener("dragenter", this.dragOver.bind(this), false);
-            this.el.addEventListener("dragover", this.dragOver.bind(this), false);
-            this.el.addEventListener("dragexit", this.dragLeave.bind(this), false);
-            this.el.addEventListener("dragleave", this.dragLeave.bind(this), false);
-            this.el.addEventListener("drop", this.dropped.bind(this), false);
+            this.el.addEventListener("dragenter", this.onDragOver.bind(this), false);
+            this.el.addEventListener("dragover", this.onDragOver.bind(this), false);
+            this.el.addEventListener("dragexit", this.onDragLeave.bind(this), false);
+            this.el.addEventListener("dragleave", this.onDragLeave.bind(this), false);
+            this.el.addEventListener("drop", this.onDropped.bind(this), false);
         }
 
         this.input.addEventListener('change', this.processInputFiles.bind(this));
@@ -200,7 +194,22 @@ export default class Fuploader {
         this.el.innerHTML = layout.join('');
     }
 
-    dragOver(event) {
+    onPaste(event) {
+        event.preventDefault();
+        let items = (event.clipboardData || event.originalEvent.clipboardData).items;
+        for (let index in items) {
+            let item = items[index];
+            if (item.kind === 'file') {
+                let blob = item.getAsFile();
+                if (blob) {
+                    this.handleFiles([blob]);
+                }
+            }
+        }
+        return false;
+    }
+
+    onDragOver(event) {
         if (!this.dragDropDisabled) {
             event.stopPropagation();
             event.preventDefault();
@@ -214,18 +223,18 @@ export default class Fuploader {
         }
     }
 
-    dragLeave() {
+    onDragLeave() {
         if (!this.dragDropDisabled) {
             this.dropzoneArea.classList.add('hidden');
         }
     }
 
-    dropped(event) {
+    onDropped(event) {
         if (!this.dragDropDisabled) {
             event.stopPropagation();
             event.preventDefault();
 
-            this.dragLeave();
+            this.onDragLeave();
 
             if (!this.isUploading) {
                 this.handleFiles(event.dataTransfer.files);
@@ -251,7 +260,11 @@ export default class Fuploader {
 
         try {
             ([...files]).forEach((file) => {
-                this.files.push(file);
+
+                let fupFile = new FileItem(file, this.options.acceptedFileTypes);
+
+                this.files.push(fupFile);
+
                 if (this.isMaxFilesLimitReached()) {
                     throw BreakException;
                 }
@@ -277,20 +290,15 @@ export default class Fuploader {
         this.filelist.classList.add('hidden');
     }
 
+    getFiles() {
+        return this.filelist.querySelectorAll('.' + this.options.classes.file);
+    }
+
     renderFiles() {
         let tpl = [];
 
         this.files.forEach((file, index) => {
-            tpl.push(this.fileTpl(file, index));
-
-            if (file.type.match('image/*')) {
-                let reader = new FileReader();
-                reader.readAsDataURL(file);
-                reader.onloadend = (event) => {
-                    let imageElement = this.filelistItems.querySelectorAll('.' + this.options.classes.file)[index];
-                    imageElement.querySelector('.' + this.options.classes.fileIconImage).style.backgroundImage = 'url(' + event.target.result + ')';
-                }
-            }
+            tpl.push(file.render(index));
         });
 
         if (this.isMaxFilesLimitReached()) {
@@ -299,7 +307,9 @@ export default class Fuploader {
 
         if (this.files.length) {
             this.showFilelist();
+
             this.filelistItems.innerHTML = tpl.join('');
+
             this.footerStat.innerHTML = this.tplStat();
 
             if (this.isMaxFilesLimitReached()) {
@@ -310,12 +320,22 @@ export default class Fuploader {
                 this.addButton.classList.remove('hidden');
             }
 
+            this.files.forEach((file, index) => {
+                file.onLoadImage((fileUrl) => {
+                    let fileItem = this.getFiles()[index];
+                    let fileItemIcon = fileItem.querySelector('.' + this.options.classes.fileIconImage);
+                    fileItemIcon.style.backgroundImage = 'url(' + fileUrl + ')';
+                });
+            });
+
             if (this.options.sortable) {
                 if (this.sortable) {
                     this.sortable.destroy();
+                    this.sortable = null;
                 }
 
                 this.sortable = Sortable.create(this.filelistItems, {
+                    animation: 150,
                     onStart: () => {
                         this.dragDropDisabled = true;
                     },
@@ -348,11 +368,17 @@ export default class Fuploader {
         this.uploadButton.classList.add('hidden');
         this.dragDropDisabled = true;
 
-        this.footerStat.innerHTML = Progressbar.render(0);
-
         if (this.sortable) {
             this.sortable.destroy();
+            this.sortable = null;
         }
+
+        this.getFiles().forEach((file) => {
+            let removeButton = file.querySelector('.' + this.options.classes.fileRemove);
+            removeButton.classList.add('hidden');
+        });
+
+        this.totalProgress();
 
         if (this.files.length) {
 
@@ -365,54 +391,30 @@ export default class Fuploader {
             // One by one uploading
             else {
                 let onLoaded = function () {
-                    let file = this.files[this.uploadedFiles];
-                    this.uploadFile(file, this.uploadedFiles, onLoaded);
+                    let fuploader = this;
+                    let file = fuploader.files[fuploader.uploadedFiles];
+                    fuploader.uploadFile(file, fuploader.uploadedFiles, onLoaded);
                 };
 
-                let file = this.files[this.uploadIndex];
-                this.uploadFile(file, this.uploadIndex, onLoaded);
+                let file = this.files[this.uploadedFiles];
+                this.uploadFile(file, this.uploadedFiles, onLoaded);
+
             }
         }
     }
 
     uploadFile(file, index, onLoaded = null) {
 
-        let fileElement = this.filelistItems.querySelectorAll('.' + this.options.classes.file)[index];
+        let fileElement = this.getFiles()[index];
 
-        if(!fileElement){
+        if (!file || !fileElement) {
             return;
         }
 
-        let progressBar = fileElement.querySelector('.' + this.options.classes.fileProgress);
-        let removeButton = fileElement.querySelector('.' + this.options.classes.fileRemove);
-        let statusContainer = fileElement.querySelector('.' + this.options.classes.fileStatus);
-
-        removeButton.classList.add('hidden');
-        progressBar.classList.remove('hidden');
-        progressBar.innerHTML = Progressbar.render(0);
-
-        let formData = new FormData();
-        formData.append(this.options.name, file);
-        formData = this.buildFormData(formData, this.options.formData);
-
-        let xhr = new XMLHttpRequest();
-        xhr.onprogress = event => {
-            let percent_completed = (event.loaded / event.total) * 100;
-            progressBar.innerHTML = Progressbar.render(percent_completed);
-        };
-        xhr.addEventListener('load', (response) => {
-            let status = parseInt(xhr.status);
-            progressBar.classList.add('hidden');
-            if (status === 200) {
-                statusContainer.innerHTML = Status.success(this.locale.uploaded);
-            } else {
-                statusContainer.innerHTML = Status.error(this.locale.error);
-            }
-
+        let loaded = () => {
             this.uploadedFiles++;
 
-            let totalProgress = (this.uploadedFiles / this.files.length) * 100;
-            this.footerStat.innerHTML = Progressbar.render(totalProgress);
+            this.totalProgress((this.uploadedFiles / this.files.length) * 100);
 
             if (onLoaded) {
                 onLoaded.call(this);
@@ -421,8 +423,42 @@ export default class Fuploader {
             if (this.uploadedFiles === this.files.length) {
                 this.uploaded();
             }
+        }
 
-        });
+        let progressBar = fileElement.querySelector('.' + this.options.classes.fileProgress);
+        let statusContainer = fileElement.querySelector('.' + this.options.classes.fileStatus);
+
+        progressBar.classList.remove('hidden');
+
+        if (!file.isValid) {
+            loaded();
+            return;
+        }
+
+        progressBar.innerHTML = Progressbar.render(0);
+
+        let formData = new FormData();
+        formData.append(this.options.name, file);
+        formData = this.buildFormData(formData, this.options.formData);
+
+        let xhr = new XMLHttpRequest();
+        xhr.upload.onprogress = event => {
+            let percent_completed = Math.ceil(event.loaded / event.total * 100);
+            progressBar.innerHTML = Progressbar.render(percent_completed);
+        };
+        xhr.onerror = () => {
+            statusContainer.innerHTML = Status.error(this.locale.error);
+        };
+        xhr.onload = () => {
+            let status = Number(xhr.status);
+            progressBar.classList.add('hidden');
+            if (status === 200) {
+                statusContainer.innerHTML = Status.success(this.locale.uploaded);
+            } else {
+                statusContainer.innerHTML = Status.error(this.locale.error);
+            }
+            loaded();
+        };
         xhr.open("POST", this.options.upload_url, true);
         xhr.send(formData);
     }
@@ -456,9 +492,15 @@ export default class Fuploader {
         this.files = [];
         this.isUploading = false;
         this.isDone = false;
-        this.uploadIndex = 0;
+        this.uploadedFiles = 0;
         this.dragDropDisabled = false;
 
+        if (this.sortable) {
+            this.sortable.destroy();
+            this.sortable = null;
+        }
+
+        this.totalProgressBar = null;
         this.reloadButton.classList.add('hidden');
         this.addButton.classList.remove('hidden');
         this.cancelButton.classList.remove('hidden');
@@ -473,36 +515,11 @@ export default class Fuploader {
                 <div>
                     <input type="file" multiple>
                     ${this.options.dragDrop ? '<div class="' + this.options.classes.dropzoneLabel + '">' + this.locale.dragFilesHere + '</div>' : ''}
-                        ${Button.primary(
-            this.options.dragDrop ?
-                this.locale.orChooseFileFromComputer :
-                this.locale.chooseFileFromComputer
-            , 'span').outerHTML}
+                    ${Button.primary(this.options.dragDrop ? this.locale.orChooseFileFromComputer : this.locale.chooseFileFromComputer, 'span').outerHTML}
                 </div>
             </label>
             <div class="${this.options.classes.dropzoneArea} hidden">
                 <div>${this.locale.dropFilesHere}</div>
-            </div>
-        `;
-    }
-
-    fileTpl(file, index) {
-        return `
-            <div class="${this.options.classes.file}" data-index="${index}">
-                <div class="${this.options.classes.fileIcon} ${file.type.match('image.*') ? this.options.classes.fileIconImage : ''}">
-                    ${Icon.file()}
-                </div>
-                <div class="${this.options.classes.filelistData}">
-                    <div class="${this.options.classes.filelistDataTitle}">${file.name}</div>
-                    <div class="${this.options.classes.filelistDataSize}">${this.fileSize(file.size)}</div>
-                </div>
-                <div class="${this.options.classes.filelistActions}">
-                    <div class="${this.options.classes.fileProgress}"></div>
-                    <div class="${this.options.classes.fileStatus}"></div>
-                    <div class="${this.options.classes.fileRemove}">
-                        ${Icon.trash()}
-                    </div>
-                </div>
             </div>
         `;
     }
@@ -524,8 +541,18 @@ export default class Fuploader {
             <div>
                 ${this.locale.selectedFiles}: ${this.files.length}${this.options.maxFiles > 0 ? '/' + this.options.maxFiles : ''}
             </div>
-            <div>${this.locale.totalSize}: ${this.fileSize(this.totalSize())}</div>
+            <div>${this.locale.totalSize}: ${HumanSize.from(this.totalSize())}</div>
         `;
+    }
+
+    totalProgress(percents = 0) {
+        let percent = Number(percents).toFixed(0);
+        if (!this.totalProgressBar) {
+            this.footerStat.innerHTML = Progressbar.render(percent);
+            this.totalProgressBar = this.footerStat.querySelector('.fready-progress-bar div');
+        }
+        this.footerStat.querySelector('.fready-progress-percent').innerHTML = percent + '%';
+        this.totalProgressBar.style.width = percent + '%';
     }
 
     totalSize() {
@@ -536,25 +563,6 @@ export default class Fuploader {
         };
 
         return sum(this.files, 'size');
-    }
-
-    fileSize(bytes, dp = 1) {
-        const thresh = 1024;
-
-        if (Math.abs(bytes) < thresh) {
-            return bytes + ' B';
-        }
-
-        const units = ['kB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
-        let u = -1;
-        const r = 10 ** dp;
-
-        do {
-            bytes /= thresh;
-            ++u;
-        } while (Math.round(Math.abs(bytes) * r) / r >= thresh && u < units.length - 1);
-
-        return bytes.toFixed(dp) + ' ' + units[u];
     }
 
 }
